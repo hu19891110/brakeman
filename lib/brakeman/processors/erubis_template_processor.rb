@@ -18,12 +18,7 @@ class Brakeman::ErubisTemplateProcessor < Brakeman::TemplateProcessor
     if node_type?(target, :lvar, :ivar) and (target.value == :_buf or target.value == :@output_buffer)
       if method == :<< or method == :safe_concat
 
-        arg = exp.first_arg
-
-        #We want the actual content
-        if call? arg and (arg.method == :to_s or arg.method == :html_safe!)
-          arg = arg.target
-        end
+        arg = normalize_output(exp.first_arg)
 
         if arg.node_type == :str #ignore plain strings
           ignore
@@ -74,9 +69,10 @@ class Brakeman::ErubisTemplateProcessor < Brakeman::TemplateProcessor
   def process_attrasgn exp
     if exp.target.node_type == :ivar and exp.target.value == :@output_buffer
       if append_method?(exp.method)
-        arg = exp.first_arg = process(exp.first_arg)
+        exp.first_arg = process(exp.first_arg)
+        arg = normalize_output(exp.first_arg)
 
-        if arg.node_type == :str
+        if arg.node_type == :str or freeze_call? arg
           ignore
         elsif safe_append_method?(exp.method)
           s = Sexp.new :output, arg
@@ -104,5 +100,27 @@ class Brakeman::ErubisTemplateProcessor < Brakeman::TemplateProcessor
 
   def safe_append_method?(method)
     method == :safe_append= || method == :safe_expr_append=
+  end
+
+  def freeze_call? exp
+    call? exp and exp.method == :freeze and string? exp.target
+  end
+
+  def normalize_output arg
+    if call? arg and [:to_s, :html_safe!, :freeze].include? arg.method
+      arg.target
+    elsif node_type? arg, :if
+      branches = [arg.then_clause, arg.else_clause].compact
+
+      if branches.empty?
+        s(:nil)
+      elsif branches.length == 2
+        Sexp.new(:or, *branches)
+      else
+        branches.first
+      end
+    else
+      arg
+    end
   end
 end
