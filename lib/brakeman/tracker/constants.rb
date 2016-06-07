@@ -45,7 +45,11 @@ module Brakeman
     include Brakeman::Util
 
     def initialize
-      @constants = []
+      @constants = Hash.new { |h, k| h[k] = [] }
+    end
+
+    def size
+      @constants.length
     end
 
     def [] exp
@@ -60,17 +64,26 @@ module Brakeman
     end
 
     def find_constant exp
-      name = Constants.constant_as_array(exp)
-      @constants.find do |c|
-        c.match? name
+      base_name = Constants.get_constant_base_name(exp)
+ #     puts "Looking up #{exp.inspect} - #{base_name.inspect}"
+
+      if @constants.key? base_name
+        name = Constants.constant_as_array(exp)
+
+        @constants[base_name].find do |c|
+          c.match? name
+        end
       end
     end
 
     def add name, value, context = nil
-      if existing = self.find_constant(name)
+      if false#existing = self.find_constant(name)
+        abort("OMG A REASSIGNMENT")
         existing.add_value value
       else
-        @constants << Constant.new(name, value, context)
+        base_name = Constants.get_constant_base_name(name)
+#        puts "Added #{base_name.inspect}"
+        @constants[base_name] << Constant.new(name, value, context)
       end
     end
 
@@ -82,8 +95,12 @@ module Brakeman
       end
     end
 
-    def each &block
-      @constants.each &block
+    def each
+      @constants.each do |name, values|
+        values.each do |constant|
+          yield constant
+        end
+      end
     end
 
     def self.constant_as_array exp
@@ -95,6 +112,20 @@ module Brakeman
         Brakeman::OutputProcessor.new.format(exp)
       else
         exp.to_s
+      end
+    end
+
+    def self.get_constant_base_name exp
+      return exp unless exp.is_a? Sexp
+
+      case exp.node_type
+      when :const, :colon3
+        exp.value
+      when :colon2
+        exp.last
+      else
+        $stderr.puts "OMG #{exp.inspect}"
+        exit!
       end
     end
   end

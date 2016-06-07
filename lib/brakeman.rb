@@ -358,6 +358,8 @@ module Brakeman
       write_report_to_formats tracker, options[:output_formats]
     end
 
+    $stderr.puts "Time spent looking up constants: #{tracker.ct} seconds"
+
     tracker
   end
 

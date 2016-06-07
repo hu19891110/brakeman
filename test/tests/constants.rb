@@ -71,12 +71,13 @@ class ConstantTests < Test::Unit::TestCase
   end
 
   def test_constants_get_literal
-    @constants.add :A, s(:lit, 1)
-    @constants.add :'A::B::C', s(:lit, 2)
-    @constants.add :D, s(:const, :D)
+    a_b_c = s(:colon2, s(:colon2, s(:const, :A), :B), :C)
+    @constants.add s(:const, :A), s(:lit, 1)
+    @constants.add a_b_c, s(:lit, 2)
+    @constants.add s(:const, :D), s(:const, :D)
 
     assert_equal s(:lit, 1), @constants.get_literal(s(:const, :A))
-    assert_equal s(:lit, 2), @constants.get_literal(s(:colon2, s(:colon2, s(:const, :A), :B), :C))
+    assert_equal s(:lit, 2), @constants.get_literal(a_b_c)
     assert_equal s(:lit, 2), @constants.get_literal(s(:colon2, s(:const, :B), :C))
     assert_equal s(:lit, 2), @constants.get_literal(s(:colon2, s(:colon2, s(:colon3, :A), :B), :C) )
     assert_nil @constants.get_literal(s(:colon2, s(:colon3, :B), :C)) # top-level B
@@ -86,9 +87,9 @@ class ConstantTests < Test::Unit::TestCase
   end
 
   def test_constants_lookup
-    @constants.add :A, s(:lit, 1)
-    @constants.add :'A::B', s(:lit, 2)
-    @constants.add :D, s(:const, :D)
+    @constants.add s(:const, :A), s(:lit, 1)
+    @constants.add s(:colon2, s(:const, :A), :B), s(:lit, 2)
+    @constants.add s(:const, :D), s(:const, :D)
 
     assert_equal s(:lit, 1), @constants[s(:const, :A)]
     assert_equal s(:lit, 2), @constants[s(:colon2, s(:const, :A), :B)]
