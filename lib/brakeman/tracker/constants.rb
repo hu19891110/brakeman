@@ -77,12 +77,13 @@ module Brakeman
     end
 
     def add name, value, context = nil
+      value = truncate_value(value)
+
       if false#existing = self.find_constant(name)
         abort("OMG A REASSIGNMENT")
         existing.add_value value
       else
         base_name = Constants.get_constant_base_name(name)
-#        puts "Added #{base_name.inspect}"
         @constants[base_name] << Constant.new(name, value, context)
       end
     end
@@ -101,6 +102,26 @@ module Brakeman
           yield constant
         end
       end
+    end
+
+    def truncate_value value
+      # Treat [1,2,3].freeze as [1,2,3]
+      if call? value and value.method == :freeze
+        value = value.target
+      end
+
+      # If the value is large, truncate it
+      if node_type? value, :array, :hash and value.length > 11
+        value = value.take(10)
+
+        if hash? value
+          value << s(:lit, :rest) << s(:lit, :'...')
+        else
+          value << s(:lit, :'...')
+        end
+      end
+
+      value
     end
 
     def self.constant_as_array exp

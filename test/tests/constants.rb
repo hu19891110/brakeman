@@ -95,4 +95,24 @@ class ConstantTests < Test::Unit::TestCase
     assert_equal s(:lit, 2), @constants[s(:colon2, s(:const, :A), :B)]
     assert_equal s(:const, :D), @constants[s(:const, :D)]
   end
+
+  def test_constants_large
+    assert_alias <<-OUTPUT, <<-INPUT, true
+    module A
+      def x
+        p [1, 2, 3, 4, 5, 6, 7, 8, 9, :'...']
+      end
+    end
+
+    X = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    OUTPUT
+    module A
+      def x
+        p X
+      end
+    end
+
+    X = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    INPUT
+  end
 end

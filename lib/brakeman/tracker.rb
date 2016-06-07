@@ -187,7 +187,6 @@ class Brakeman::Tracker
   end
 
   def add_constant name, value, context = nil
-    #p value, value.mass, value.length if value.mass > 100
     @constants.add name, value, context unless @options[:no_constants]
   end
 
