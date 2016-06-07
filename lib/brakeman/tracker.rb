@@ -12,7 +12,7 @@ class Brakeman::Tracker
   attr_accessor :controllers, :constants, :templates, :models, :errors,
     :checks, :initializers, :config, :routes, :processor, :libs,
     :template_cache, :options, :filter_cache, :start_time, :end_time,
-    :duration, :ignored_filter, :ct
+    :duration, :ignored_filter
 
   #Place holder when there should be a model, but it is not
   #clear what model it will be.
@@ -48,7 +48,6 @@ class Brakeman::Tracker
     @start_time = Time.now
     @end_time = nil
     @duration = nil
-    @ct = 0
   end
 
   #Add an error to the list. If no backtrace is given,
@@ -191,10 +190,7 @@ class Brakeman::Tracker
   end
 
   def constant_lookup name
-    t = Time.now
-    c = @constants.get_literal name unless @options[:no_constants]
-    @ct += (Time.now - t)
-    c
+    @constants.get_literal name unless @options[:no_constants]
   end
 
   def index_call_sites

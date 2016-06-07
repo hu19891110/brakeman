@@ -145,8 +145,7 @@ module Brakeman
       when :colon2
         exp.last
       else
-        $stderr.puts "OMG #{exp.inspect}"
-        exit!
+        exp
       end
     end
   end
